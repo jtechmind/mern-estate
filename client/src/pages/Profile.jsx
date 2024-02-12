@@ -71,7 +71,7 @@ function Profile() {
           alt="profile"
           className="rounded-full h-28 w-28 object-cover cursor-pointer self-center mt-2"
         />
-        <p className="text-sm self-center">
+        <p className="text-sm self-center mb-5 mt-2">
           {fileUploadError ? (
             <span className="text-red-700">Error in image upload</span>
           ) : imageProgress > 0 && imageProgress < 100 ? (
