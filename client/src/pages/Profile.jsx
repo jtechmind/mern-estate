@@ -1,6 +1,7 @@
 import { useSelector } from "react-redux";
 import { useEffect, useRef, useState } from "react";
 import {
+  getDownloadURL,
   getStorage,
   ref,
   uploadBytes,
@@ -12,7 +13,12 @@ function Profile() {
   const { currentUser } = useSelector((state) => state.user);
   const fileRef = useRef(null);
   const [file, setFile] = useState(undefined);
-  console.log(file);
+  const [imageProgress, setImageProgress] = useState(0);
+  const [fileUploadError, setFileUploadError] = useState(false);
+  const [formData, setFormData] = useState({});
+  console.log(formData);
+  console.log(imageProgress);
+  console.log(fileUploadError);
 
   useEffect(() => {
     if (file) {
@@ -25,10 +31,24 @@ function Profile() {
     const fileName = new Date().getTime() + file.name;
     const storageRef = ref(storage, fileName);
     const uploadTask = uploadBytesResumable(storageRef, file);
-    uploadTask.on("state_changed", (snapshot) => {
-      const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-      console.log("upload is: " + progress + " done");
-    });
+
+    uploadTask.on(
+      "state_changed",
+      (snapshot) => {
+        const progress = Math.floor(
+          (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+        );
+        setImageProgress(Math.floor(progress));
+      },
+      (error) => {
+        setFileUploadError(true);
+      },
+      () => {
+        getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+          setFormData({ ...formData, avatar: downloadURL });
+        });
+      }
+    );
   };
   // firebase Storage
   // allow write: if
@@ -47,10 +67,23 @@ function Profile() {
         />
         <img
           onClick={() => fileRef.current.click()}
-          src={currentUser.avatar}
+          src={formData.avatar || currentUser.avatar}
           alt="profile"
           className="rounded-full h-28 w-28 object-cover cursor-pointer self-center mt-2"
         />
+        <p className="text-sm self-center">
+          {fileUploadError ? (
+            <span className="text-red-700">Error in image upload</span>
+          ) : imageProgress > 0 && imageProgress < 100 ? (
+            <span className="text-green-700">
+              {`Uploading ${imageProgress}%`}
+            </span>
+          ) : imageProgress === 100 ? (
+            <span className="text-green-700">Image Successfully uploaded</span>
+          ) : (
+            ""
+          )}
+        </p>
         <input
           type="text"
           name="username"
